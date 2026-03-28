@@ -1,0 +1,45 @@
+name: Deploy React Three Fiber Site to Pages
+
+on:
+  push:
+    branches: [main] # 确保你的主分支确实叫 main
+  workflow_dispatch: # 允许手动触发
+
+# 设置 GITHUB_TOKEN 的权限，允许部署到 GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 限制同一时间只有一个部署任务在运行
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ⚙️
+        uses: actions/setup-node@v4
+        with:
+          node-node-version: 20
+          cache: 'npm' # 自动缓存 node_modules，加速构建
+
+      - name: Install and Build 🔧
+        run: |
+          npm install
+          npm run build
+
+      - name: Upload Artifact 📤
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Vite 默认打包输出路径是 dist
+          path: dist
+
+      - name: Deploy to GitHub Pages 🚀
+        id: deployment
+        uses: actions/deploy-pages@v4
