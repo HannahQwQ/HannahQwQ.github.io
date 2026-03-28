@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
+import Home from './views/Home';
 // 假设你已经创建了 Mailbox 页面组件
 const Mailbox = () => <div style={{ padding: '20px' }}>这是匿名信箱页面</div>;
 
