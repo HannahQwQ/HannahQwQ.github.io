@@ -1,0 +1,46 @@
+/* 容器：毛玻璃效果 */
+.chat-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    /* 半透明白 */
+    backdrop-filter: blur(15px);
+    /* 背景模糊 */
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    /* 圆角矩形，更具现代感 */
+    padding: 5px 20px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* 输入框本体 */
+.chat-input-container input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 16px;
+    height: 45px;
+    width: 200px;
+    /* 可以根据需要调整宽度 */
+    transition: width 0.3s ease;
+}
+
+/* 焦点状态：输入框变长，边框发光 */
+.chat-input-container:focus-within {
+    width: 280px;
+    /* 聚焦时稍微拉长 */
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(56, 189, 248, 0.5);
+    /* 使用我们在 index.css 定义的天蓝色 */
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+}
+
+/* 占位符颜色 */
+.chat-input-container input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    font-style: italic;
+}

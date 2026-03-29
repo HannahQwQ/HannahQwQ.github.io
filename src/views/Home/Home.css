@@ -1,0 +1,46 @@
+.home-page {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.ui-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    /* 穿透点击层 */
+}
+
+/* 所有的交互容器需要恢复点击 */
+.ui-overlay>div {
+    pointer-events: auto;
+    position: absolute;
+}
+
+/* 1. 角色位置：右上角 */
+.character-pos {
+    top: 5%;
+    right: 5%;
+    width: 40%;
+    /* 根据图片大小调整 */
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 2. 输入框位置：左上角 1/4 处 */
+.input-pos {
+    top: 25%;
+    /* 距离顶部 1/4 */
+    left: 10%;
+}
+
+/* 3. 匿名信箱位置：中间，距离底部 2/5 */
+.mailbox-pos {
+    bottom: 30%;
+    /* 2/5 = 40% */
+    left: 50%;
+    transform: translateX(-50%);
+    /* 水平居中 */
+}

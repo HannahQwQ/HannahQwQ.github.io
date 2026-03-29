@@ -1,0 +1,37 @@
+.mailbox-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 100px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.mailbox-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-color);
+    color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+}
+
+/* 扫光动画：让它看起来更有灵气 */
+.shimmer {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: 0.5s;
+}
+
+.mailbox-card:hover .shimmer {
+    left: 150%;
+}
