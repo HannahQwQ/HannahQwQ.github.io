@@ -10,17 +10,13 @@ export default function Home() {
 
     return (
         <main className="home-page fade-in">
-            {/* Canvas 层：作为背景 */}
-            <div className="canvas-layer">
+            {/* 1. 角色占位（通过 CSS 控制在右上角） */}
+            <div className="character-pos">
                 <Character />
             </div>
 
             {/* Overlay 层：UI 交互 */}
             <div className="ui-overlay">
-                {/* 1. 角色占位（通过 CSS 控制在右上角） */}
-                <div className="character-pos">
-                    <Character />
-                </div>
 
                 {/* 2. 输入框（左上角 1/4 处） */}
                 <div className="input-pos">

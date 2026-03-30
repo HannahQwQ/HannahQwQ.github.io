@@ -21,12 +21,18 @@
 
 /* 1. 角色位置：右上角 */
 .character-pos {
+    position: absolute;
+        /* 关键：必须显式声明，因为它现在不在 ui-overlay 内部了 */
     top: 5%;
     right: 5%;
     width: 40%;
     /* 根据图片大小调整 */
     display: flex;
     justify-content: flex-end;
+    z-index: 1;
+        /* 确保它在 UI 层下面 */
+    pointer-events: none;
+        /* 让点击穿透图片，防止挡住 UI */
 }
 
 /* 2. 输入框位置：左上角 1/4 处 */
