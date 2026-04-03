@@ -1,0 +1,81 @@
+/* 容器：保持居中且溢出隐藏 */
+.mailbox-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: #0f0f0f;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 问题墙：砖块化布局 */
+.question-wall {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    max-width: 900px;
+    margin-bottom: 40px;
+    padding: 20px;
+    perspective: 1000px;
+    /* 为可能的3D效果预留 */
+}
+
+/* 单个问题“砖块” */
+.question-brick {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 1rem;
+    white-space: nowrap;
+    cursor: default;
+    transition: transform 0.3s ease;
+    /* 基础动画：波浪起伏 */
+    animation: waveFloat 3s ease-in-out infinite;
+}
+
+/* 状态区分 */
+.question-brick.unanswered {
+    color: rgba(255, 255, 255, 0.3);
+    /* 浅色/半透明 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.question-brick.answered {
+    color: rgba(255, 255, 255, 0.9);
+    /* 高亮 */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* 输入框样式 */
+.mail-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #555;
+    color: white;
+    font-size: 1.5rem;
+    outline: none;
+    padding: 10px;
+    width: 300px;
+    text-align: center;
+    z-index: 10;
+}
+
+.mail-input:focus {
+    border-bottom-color: #fff;
+}
+
+/* 波浪动画关键帧 */
+@keyframes waveFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+        /* 向上漂浮 */
+    }
+}
