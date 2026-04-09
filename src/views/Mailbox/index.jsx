@@ -1,55 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
 import './Mailbox.css';
 
 const Mailbox = () => {
-    // 模拟初始数据：answered 表示是否已回答
-    const [questions, setQuestions] = useState([
-        { id: 1, text: "你最近在忙什么项目？", answered: true },
-        { id: 2, text: "React和Vue更喜欢哪个？", answered: false },
-        { id: 3, text: "设计灵感来源哪里？", answered: true },
-        { id: 4, text: "今天天气不错对吧？", answered: false },
-    ]);
-
+    // 初始状态设为空数组
+    const [questions, setQuestions] = useState([]);
     const [inputValue, setInputValue] = useState("");
 
-    // 处理回车提交
-    const handleKeyDown = (e) => {
+    // --- 1. 页面加载时拉取数据 ---
+    useEffect(() => {
+        const fetchMessages = async () => {
+            const { data, error } = await supabase
+                .from('messages') // 确保表名是 messages
+                .select('*')
+                .eq('is_visible', true) // 只显示你允许公开的
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('获取数据失败:', error.message);
+            } else {
+                setQuestions(data);
+            }
+        };
+
+        fetchMessages();
+    }, []);
+
+    // --- 2. 处理提交到数据库 ---
+    const handleKeyDown = async (e) => {
         if (e.key === 'Enter' && inputValue.trim()) {
-            const newQuestion = {
-                id: Date.now(),
-                text: inputValue.trim(),
-                answered: false, // 新输入的默认未回答（浅色）
-            };
-            setQuestions([newQuestion, ...questions]);
-            setInputValue("");
+            const content = inputValue.trim();
+
+            // 构造要插入的数据（字段名需与数据库一致）
+            const { data, error } = await supabase
+                .from('messages')
+                .insert([
+                    {
+                        content: content,
+                        is_answered: false,
+                        is_visible: true // 如果你想先发后审，这里设为 false
+                    }
+                ])
+                .select(); // 插入后返回该行数据，包含 ID
+
+            if (error) {
+                console.error('发送失败:', error.message);
+                alert("发送失败，请检查网络或权限配置");
+            } else if (data) {
+                // 将新消息插入到列表首位
+                setQuestions([data[0], ...questions]);
+                setInputValue("");
+            }
         }
     };
 
-    // 截取前15个字符
     const formatText = (text) => {
+        if (!text) return "";
         return text.length > 15 ? text.substring(0, 15) + "..." : text;
     };
 
     return (
         <div className="mailbox-container">
-            {/* 问题墙 */}
             <div className="question-wall">
                 {questions.map((q, index) => (
                     <div
-                        key={q.id}
-                        className={`question-brick ${q.answered ? 'answered' : 'unanswered'}`}
+                        key={q.id} // 现在使用数据库生成的真实 ID
+                        className={`question-brick ${q.is_answered ? 'answered' : 'unanswered'}`}
                         style={{
-                            // 关键：通过 index 产生波浪偏移感
                             animationDelay: `${index * 0.2}s`,
-                            animationDuration: `${2 + Math.random()}s` // 增加一点随机感更自然
+                            animationDuration: `${2 + Math.random()}s`
                         }}
                     >
-                        {formatText(q.text)}
+                        {/* 这里的 q.content 对应数据库的列名 */}
+                        {formatText(q.content)}
                     </div>
                 ))}
             </div>
 
-            {/* 输入区域 */}
             <input
                 className="mail-input"
                 placeholder="Ask me anything..."
