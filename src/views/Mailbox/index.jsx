@@ -16,6 +16,9 @@ const Mailbox = () => {
     const [questions, setQuestions] = useState([]);
     const [inputValue, setInputValue] = useState("");
 
+    // 新增：追踪当前被点击的留言
+    const [selectedQuestion, setSelectedQuestion] = useState(null);
+
     // 1. 页面加载时拉取数据
     useEffect(() => {
         const fetchMessages = async () => {
