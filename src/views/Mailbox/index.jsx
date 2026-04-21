@@ -74,9 +74,12 @@ const Mailbox = () => {
                         key={q.id} // 使用数据库返回的真实 ID
                         // 注意这里：从 q.is_answered 读取布尔值
                         className={`question-brick ${q.is_answered ? 'answered' : 'unanswered'}`}
+                        // 逻辑：只有已回答的才允许触发点击
+                        onClick={() => q.is_answered && setSelectedQuestion(q)}
                         style={{
                             animationDelay: `${index * 0.1}s`,
-                            animationDuration: `${2 + Math.random()}s`
+                            animationDuration: `${2 + Math.random()}s`,
+                            cursor: q.is_answered ? 'pointer' : 'default' // 给用户视觉提示
                         }}
                     >
                         {/* 注意这里：从 q.content 读取留言内容 */}
@@ -93,6 +96,21 @@ const Mailbox = () => {
                 onKeyDown={handleKeyDown}
                 autoFocus
             />
+
+            {/* 回答弹窗 UI */}
+            {selectedQuestion && (
+                <div className="modal-overlay" onClick={() => setSelectedQuestion(null)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h3>问题：</h3>
+                        <p>{selectedQuestion.content}</p>
+                        <hr />
+                        <h3>我的回答：</h3>
+                        {/* 假设你的数据库字段是 answer */}
+                        <p className="answer-text">{selectedQuestion.answer || "思考中..."}</p>
+                        <button onClick={() => setSelectedQuestion(null)}>关闭</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
