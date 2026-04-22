@@ -101,13 +101,11 @@ const Mailbox = () => {
             {selectedQuestion && (
                 <div className="modal-overlay" onClick={() => setSelectedQuestion(null)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h3>问题：</h3>
                         <p>{selectedQuestion.content}</p>
                         <hr />
-                        <h3>我的回答：</h3>
                         {/* 假设你的数据库字段是 answer */}
                         <p className="answer-text">{selectedQuestion.answer || "思考中..."}</p>
-                        <button onClick={() => setSelectedQuestion(null)}>关闭</button>
+                        <button onClick={() => setSelectedQuestion(null)}>back</button>
                     </div>
                 </div>
             )}
