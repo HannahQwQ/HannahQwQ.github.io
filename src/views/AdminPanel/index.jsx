@@ -13,6 +13,12 @@ const AdminPanel = () => {
         setQuestions(data.filter(q => !q.is_answered));
     };
 
+    useEffect(() => {
+        if (authorized) {
+            fetchMessages();
+        }
+    }, [authorized]);
+
     const submitAnswer = async (id, answer) => {
         const res = await fetch('https://hannahs-letter-box.dengxhxhwk.workers.dev/answer', {
             method: 'POST',
