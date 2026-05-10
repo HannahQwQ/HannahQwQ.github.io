@@ -9,7 +9,10 @@ export default function Home() {
     const [mode, setMode] = useState('idle');
     // 1. 将状态改为数组，存放消息对象 { role: 'user' | 'ai', text: string }
     const [chatHistory, setChatHistory] = useState([]);
+    const [isLoading, setIsLoading] = useState(false); // 加载状态
 
+    // 用于存储 Dify 返回的会话 ID，实现连续对话
+    const conversationIdRef = useRef("");
     // 用于自动定位滚动条的引用
     const scrollRef = useRef(null);
 
@@ -20,20 +23,43 @@ export default function Home() {
         }
     }, [chatHistory]);
 
-    const handleInteraction = (msg) => {
-        if (!msg.trim()) return;
+    const handleInteraction = async (msg) => {
+        if (!msg.trim() || isLoading) return;
 
         setMode('chatting');
+        setIsLoading(true); // 开始请求，禁用输入或展示等待状态
 
-        // 3. 将用户消息加入数组
+        // 1. 先把用户的话塞进聊天框
         const userMsg = { role: 'user', text: msg };
         setChatHistory(prev => [...prev, userMsg]);
 
-        // 4. 模拟 AI 响应
-        setTimeout(() => {
-            const aiMsg = { role: 'ai', text: "这是历史记录中的一条回复..." };
-            setChatHistory(prev => [...prev, aiMsg]);
-        }, 1000);
+        try {
+            // 2. 请求你在 Vercel 上的后端函数
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: msg,
+                    conversation_id: conversationIdRef.current // 传递上次的 ID
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.answer) {
+                // 3. 更新会话 ID
+                conversationIdRef.current = data.conversation_id;
+
+                // 4. 将 AI 的真回复塞进聊天框
+                const aiMsg = { role: 'ai', text: data.answer };
+                setChatHistory(prev => [...prev, aiMsg]);
+            }
+        } catch (error) {
+            console.error("Dify Error:", error);
+            setChatHistory(prev => [...prev, { role: 'ai', text: "（信号中断...请检查网络）" }]);
+        } finally {
+            setIsLoading(false); // 结束加载
+        }
     };
 
     return (
@@ -44,7 +70,8 @@ export default function Home() {
 
             <div className="ui-overlay">
                 <div className="input-pos">
-                    <ChatInput onSend={handleInteraction} />
+                    {/* 加载时禁用输入框防止刷屏 */}
+                    <ChatInput onSend={handleInteraction} disabled={isLoading} />
 
                     {/* 5. 渲染对话列表 */}
                     {mode === 'chatting' && (
@@ -54,6 +81,7 @@ export default function Home() {
                                     {chat.text}
                                 </div>
                             ))}
+                            {isLoading && <div className="ai-bubble">33 is on the way...</div>}
                         </div>
                     )}
                 </div>
