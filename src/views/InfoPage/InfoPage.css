@@ -1,0 +1,63 @@
+.info-page {
+  min-height: 100vh;
+  color: #f8fafc;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(88, 199, 215, 0.18), transparent 30%),
+    linear-gradient(135deg, #0d1118 0%, #17202b 52%, #111827 100%);
+  display: grid;
+  place-items: center;
+  padding: 48px 20px;
+}
+
+.info-shell {
+  width: min(920px, 100%);
+}
+
+.info-back {
+  color: #9cc9d4;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.info-title {
+  margin-top: 28px;
+  font-size: clamp(2.4rem, 8vw, 5.5rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.info-lead {
+  margin-top: 24px;
+  max-width: 680px;
+  color: rgba(248, 250, 252, 0.78);
+  font-size: 1.08rem;
+  line-height: 1.8;
+}
+
+.info-grid {
+  margin-top: 36px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.info-card {
+  min-height: 126px;
+  border: 1px solid rgba(248, 250, 252, 0.12);
+  background: rgba(13, 17, 24, 0.58);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.info-card h2 {
+  font-size: 0.92rem;
+  color: #58c7d7;
+  margin-bottom: 12px;
+}
+
+.info-card p,
+.info-card a {
+  color: rgba(248, 250, 252, 0.82);
+  line-height: 1.65;
+  text-decoration: none;
+}

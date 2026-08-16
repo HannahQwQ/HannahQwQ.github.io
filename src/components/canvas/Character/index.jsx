@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, MeshDistortMaterial } from '@react-three/drei';
-import { Suspense, useRef } from 'react';
+import { Sphere, MeshDistortMaterial } from '@react-three/drei';
+import { Suspense } from 'react';
 import * as THREE from 'three';
 
 // 🎥 镜头控制器（内部组件）

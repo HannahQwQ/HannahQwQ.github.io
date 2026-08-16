@@ -1,67 +1,79 @@
-import { useState, useEffect, useRef } from 'react';
-import Character from '@/components/canvas/Character';
-import ChatInput from '@/components/overlay/ChatInput';
-import MailboxLink from '@/components/overlay/MailboxLink';
-import './Home.css'; // 所有的定位逻辑都在这里
+import { Link, useNavigate } from 'react-router-dom';
+import WorldStage, { WORLD_NODES } from '@/components/world/WorldStage';
+import './Home.css';
+
+const GUIDE_LINES = [
+  'I am 33. This is the first small version of the world.',
+  'Rotate the view, choose a gate, then we can replace the blocks with real models.',
+  'Avatar generation is reserved. For now, you enter as a fixed visitor.',
+];
 
 export default function Home() {
-    // 状态控制：'idle' (初始) 或 'chatting' (对话中)
-    const [mode, setMode] = useState('idle');
-    // 1. 将状态改为数组，存放消息对象 { role: 'user' | 'ai', text: string }
-    const [chatHistory, setChatHistory] = useState([]);
+  const navigate = useNavigate();
 
-    // 用于自动定位滚动条的引用
-    const scrollRef = useRef(null);
+  const handleSelectNode = (node) => {
+    navigate(node.route);
+  };
 
-    // 2. 自动滚动逻辑：每当聊天记录更新，滚动到底部
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [chatHistory]);
+  return (
+    <main className="home-page fade-in">
+      <WorldStage onSelectNode={handleSelectNode} />
 
-    const handleInteraction = (msg) => {
-        if (!msg.trim()) return;
+      <section className="world-map-fallback" aria-label="Interactive world map">
+        <div className="fallback-orbit">
+          <button
+            type="button"
+            className="fallback-node fallback-node-projects"
+            onClick={() => handleSelectNode(WORLD_NODES[0])}
+          >
+            <span>Project Gate</span>
+          </button>
+          <button
+            type="button"
+            className="fallback-node fallback-node-about"
+            onClick={() => handleSelectNode(WORLD_NODES[1])}
+          >
+            <span>Archive Wall</span>
+          </button>
+          <button
+            type="button"
+            className="fallback-node fallback-node-mailbox"
+            onClick={() => handleSelectNode(WORLD_NODES[2])}
+          >
+            <span>Letter Box</span>
+          </button>
+          <div className="fallback-companion">33</div>
+        </div>
+      </section>
 
-        setMode('chatting');
+      <section className="world-hud" aria-label="World navigation">
+        <div className="world-brand">
+          <span className="world-kicker">Portfolio world v0.1</span>
+          <h1>Enter the compact archive.</h1>
+        </div>
+        <nav className="world-nav">
+          {WORLD_NODES.map((node) => (
+            <button key={node.id} type="button" onClick={() => handleSelectNode(node)}>
+              {node.title}
+            </button>
+          ))}
+          <Link to="/contact">Contact</Link>
+        </nav>
+      </section>
 
-        // 3. 将用户消息加入数组
-        const userMsg = { role: 'user', text: msg };
-        setChatHistory(prev => [...prev, userMsg]);
+      <aside className="world-guide" aria-label="33 guide">
+        <div className="guide-avatar">33</div>
+        <div className="guide-copy">
+          {GUIDE_LINES.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+      </aside>
 
-        // 4. 模拟 AI 响应
-        setTimeout(() => {
-            const aiMsg = { role: 'ai', text: "这是历史记录中的一条回复..." };
-            setChatHistory(prev => [...prev, aiMsg]);
-        }, 1000);
-    };
-
-    return (
-        <main className="home-page fade-in">
-            <div className="character-pos full-screen">
-                <Character isChatting={mode === 'chatting'} />
-            </div>
-
-            <div className="ui-overlay">
-                <div className="input-pos">
-                    <ChatInput onSend={handleInteraction} />
-
-                    {/* 5. 渲染对话列表 */}
-                    {mode === 'chatting' && (
-                        <div className="dialogue-container" ref={scrollRef}>
-                            {chatHistory.map((chat, index) => (
-                                <div key={index} className={`${chat.role}-bubble`}>
-                                    {chat.text}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="mailbox-pos">
-                    <MailboxLink />
-                </div>
-            </div>
-        </main>
-    );
+      <div className="world-status">
+        <span>Drag to orbit</span>
+        <span>Click blocks to enter</span>
+      </div>
+    </main>
+  );
 }

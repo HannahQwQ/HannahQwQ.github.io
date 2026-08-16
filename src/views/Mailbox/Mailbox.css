@@ -127,3 +127,31 @@
     font-size: 1.1rem;
     line-height: 1.6;
 }
+
+.question-brick {
+    border: 0;
+    font: inherit;
+    background: transparent;
+}
+
+.question-brick:disabled {
+    pointer-events: none;
+}
+
+.mail-status {
+    margin-top: 18px;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.85rem;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: 0;
+    background: #111827;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+}

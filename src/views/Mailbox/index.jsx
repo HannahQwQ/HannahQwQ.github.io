@@ -1,100 +1,131 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './Mailbox.css';
 
-const Mailbox = () => {
-    // console.log("Mailbox 组件开始渲染！"); // 防止静默失败
-    // Cloudflare Worker 实际地址
-    const WORKER_URL = 'https://hannahs-letter-box.dengxhxhwk.workers.dev';
-    // 模拟初始数据：answered 表示是否已回答
-    // const [questions, setQuestions] = useState([
-    //     { id: 1, text: "你最近在忙什么项目？", answered: true },
-    //     { id: 2, text: "React和Vue更喜欢哪个？", answered: false },
-    //     { id: 3, text: "设计灵感来源哪里？", answered: true },
-    //     { id: 4, text: "今天天气不错对吧？", answered: false },
-    // ]);
+const WORKER_URL = 'https://hannahs-letter-box.dengxhxhwk.workers.dev';
+const FALLBACK_MESSAGES = [
+  {
+    id: 'local-1',
+    content: 'What should I inspect first?',
+    is_answered: true,
+    answer: 'Start with the world. The rest can become gates.',
+  },
+  {
+    id: 'local-2',
+    content: 'Can I leave quietly?',
+    is_answered: false,
+  },
+];
 
-    const [questions, setQuestions] = useState([]);
-    const [inputValue, setInputValue] = useState("");
+function getAnswer(message) {
+  return message.answer || message.reply || message.answer_content || '33 has not answered this one yet.';
+}
 
-    // 新增：追踪当前被点击的留言
-    const [selectedQuestion, setSelectedQuestion] = useState(null);
+export default function Mailbox() {
+  const [questions, setQuestions] = useState([]);
+  const [inputValue, setInputValue] = useState('');
+  const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [status, setStatus] = useState('loading');
 
-    // 1. 页面加载时拉取数据
-    useEffect(() => {
-        const fetchMessages = async () => {
-            try {
-                const response = await fetch(WORKER_URL);
-                const data = await response.json();
-                // 这里的 data 就是数据库返回的数组
-                setQuestions(data);
-            } catch (error) {
-                console.error("加载留言失败:", error);
-            }
-        };
-        fetchMessages();
-    }, []);
+  const loadMessages = async () => {
+    try {
+      const response = await fetch(WORKER_URL);
+      if (!response.ok) {
+        throw new Error(`Worker responded with ${response.status}`);
+      }
+      const data = await response.json();
+      setQuestions(Array.isArray(data) ? data : []);
+      setStatus('ready');
+    } catch (error) {
+      console.error('Failed to load mailbox messages:', error);
+      setQuestions(FALLBACK_MESSAGES);
+      setStatus('offline');
+    }
+  };
 
-    // 2. 处理回车提交
-    const handleKeyDown = async (e) => {
-        if (e.key === 'Enter' && inputValue.trim()) {
-            const newContent = inputValue.trim();
+  useEffect(() => {
+    loadMessages();
+  }, []);
 
-            try {
-                const response = await fetch(WORKER_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: newContent }),
-                });
+  const handleKeyDown = async (event) => {
+    if (event.key !== 'Enter' || !inputValue.trim()) return;
 
-                if (response.ok) {
-                    // 发送成功后，手动刷新一次列表，或者把新消息加到列表开头
-                    // 最简单的方法是重新获取一次，确保数据和数据库一致
-                    const res = await fetch(WORKER_URL);
-                    const newData = await res.json();
-                    setQuestions(newData);
-                    setInputValue("");
-                }
-            } catch (error) {
-                console.error("发送失败:", error);
-                alert("发送失败，请检查网络");
-            }
-        }
-    };
+    const newContent = inputValue.trim();
 
-    // 截取前15个字符
-    const formatText = (text) => {
-        return text.length > 15 ? text.substring(0, 15) + "..." : text;
-    };
+    try {
+      const response = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newContent }),
+      });
 
-    return (
-        <div className="mailbox-container">
-            <div className="question-wall">
-                {questions.map((q, index) => (
-                    <div
-                        key={q.id} // 使用数据库返回的真实 ID
-                        // 注意这里：从 q.is_answered 读取布尔值
-                        className={`question-brick ${q.is_answered ? 'answered' : 'unanswered'}`}
-                        style={{
-                            animationDelay: `${index * 0.1}s`,
-                            animationDuration: `${2 + Math.random()}s`
-                        }}
-                    >
-                        {/* 注意这里：从 q.content 读取留言内容 */}
-                        {formatText(q.content)}
-                    </div>
-                ))}
-            </div>
+      if (!response.ok) {
+        throw new Error(`Worker responded with ${response.status}`);
+      }
 
-            <input
-                className="mail-input"
-                placeholder="Ask me anything..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-            />
+      setInputValue('');
+      await loadMessages();
+    } catch (error) {
+      console.error('Failed to send mailbox message:', error);
+      setStatus('offline');
+      setQuestions((current) => [
+        { id: `local-${Date.now()}`, content: newContent, is_answered: false },
+        ...current,
+      ]);
+      setInputValue('');
+    }
+  };
+
+  const formatText = (text) => {
+    const source = String(text || '');
+    return source.length > 15 ? `${source.substring(0, 15)}...` : source;
+  };
+
+  return (
+    <div className="mailbox-container">
+      <div className="question-wall">
+        {questions.map((question, index) => {
+          const answered = Boolean(question.is_answered);
+          return (
+            <button
+              key={question.id || `${question.content}-${index}`}
+              type="button"
+              className={`question-brick ${answered ? 'answered' : 'unanswered'}`}
+              style={{
+                animationDelay: `${index * 0.1}s`,
+                animationDuration: `${2 + (index % 4) * 0.18}s`,
+              }}
+              onClick={() => answered && setSelectedQuestion(question)}
+              disabled={!answered}
+            >
+              {formatText(question.content)}
+            </button>
+          );
+        })}
+      </div>
+
+      <input
+        className="mail-input"
+        placeholder={status === 'offline' ? 'Offline draft...' : 'Ask me anything...'}
+        value={inputValue}
+        onChange={(event) => setInputValue(event.target.value)}
+        onKeyDown={handleKeyDown}
+        autoFocus
+      />
+
+      {status === 'offline' && (
+        <p className="mail-status">Worker is unreachable, so this page is showing local drafts.</p>
+      )}
+
+      {selectedQuestion && (
+        <div className="modal-overlay" onClick={() => setSelectedQuestion(null)}>
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" type="button" onClick={() => setSelectedQuestion(null)}>
+              Close
+            </button>
+            <p className="answer-text">{getAnswer(selectedQuestion)}</p>
+          </div>
         </div>
-    );
-};
-
-export default Mailbox;
+      )}
+    </div>
+  );
+}
