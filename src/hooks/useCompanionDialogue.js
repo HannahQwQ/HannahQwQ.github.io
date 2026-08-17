@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 const ERROR_REPLY = 'Error 404: My logic module was wrestling with a pixel, and I did not quite catch that.';
-const MAX_OPENING_TURNS = 5;
 const PORTFOLIO_SCOPE = [
   'portfolio',
   'world',
@@ -59,11 +58,8 @@ export default function useCompanionDialogue({ pageState, activeNode } = {}) {
     },
   ]);
   const [turns, setTurns] = useState(0);
-  const isDormant = pageState === 'opening' && turns >= MAX_OPENING_TURNS;
 
   const sendMessage = (text) => {
-    if (isDormant) return;
-
     const reply = createReply(text, pageState, activeNode);
     setMessages((current) => [
       ...current,
@@ -76,8 +72,6 @@ export default function useCompanionDialogue({ pageState, activeNode } = {}) {
   return {
     messages,
     turns,
-    maxTurns: MAX_OPENING_TURNS,
-    isDormant,
     sendMessage,
   };
 }

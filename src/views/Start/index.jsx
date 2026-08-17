@@ -19,8 +19,8 @@ export default function Start() {
         <span className="start-kicker">3D Portfolio World</span>
         <h1>Before the world opens, meet 33.</h1>
         <p>
-          A compact entry scene for quick orientation. Chat is limited to keep the
-          portfolio focused, then you can build a visitor signal and enter.
+          A compact entry scene for quick orientation. Dify owns the dialogue state;
+          this page keeps the topic focused, then you can build a visitor signal and enter.
         </p>
 
         <div className="start-actions">
@@ -34,17 +34,13 @@ export default function Start() {
       <aside className="start-dialogue">
         <div className="dialogue-meta">
           <span>33 opening channel</span>
-          <span>{dialogue.turns}/{dialogue.maxTurns}</span>
+          <span>{dialogue.turns} turns</span>
         </div>
         <DialoguePanel
           messages={dialogue.messages}
           onSend={dialogue.sendMessage}
-          disabled={dialogue.isDormant}
           placeholder="Ask about the portfolio world..."
         />
-        {dialogue.isDormant && (
-          <p className="dialogue-limit">33 is resting. Continue exploring when ready.</p>
-        )}
       </aside>
     </main>
   );
