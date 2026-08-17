@@ -58,7 +58,10 @@ export default function World() {
         lowMode={effectiveLowMode}
       />
 
-      <section className="world-map-fallback" aria-label="Interactive world map">
+      <section
+        className={`world-map-fallback ${effectiveLowMode ? 'world-map-fallback-full' : 'world-map-minimap'}`}
+        aria-label="Interactive world map"
+      >
         <div className="fallback-orbit">
           {WORLD_AREAS.map((node) => (
             <button
