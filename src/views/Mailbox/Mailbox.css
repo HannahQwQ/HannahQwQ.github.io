@@ -144,6 +144,29 @@
     font-size: 0.85rem;
 }
 
+.mailbox-back {
+    position: fixed;
+    top: 24px;
+    left: 24px;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 9px 12px;
+    z-index: 20;
+}
+
+.mailbox-guide {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    max-width: min(360px, calc(100vw - 48px));
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    line-height: 1.45;
+    z-index: 20;
+}
+
 .modal-close {
     position: absolute;
     top: 10px;

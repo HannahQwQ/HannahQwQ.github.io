@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Mailbox.css';
 
 const WORKER_URL = 'https://hannahs-letter-box.dengxhxhwk.workers.dev';
@@ -82,6 +83,9 @@ export default function Mailbox() {
 
   return (
     <div className="mailbox-container">
+      <Link className="mailbox-back" to="/world">Back to world</Link>
+      <p className="mailbox-guide">33: Leave a question. Answered notes become readable bricks.</p>
+
       <div className="question-wall">
         {questions.map((question, index) => {
           const answered = Boolean(question.is_answered);

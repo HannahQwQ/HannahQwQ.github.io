@@ -2,33 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Html, OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
-
-const WORLD_NODES = [
-  {
-    id: 'projects',
-    title: 'Project Gate',
-    subtitle: 'Works, prototypes, research traces',
-    route: '/project/first-world',
-    color: '#58c7d7',
-    position: [-3.2, 0.55, -0.6],
-  },
-  {
-    id: 'about',
-    title: 'Archive Wall',
-    subtitle: 'Background, stack, direction',
-    route: '/about',
-    color: '#e8d26a',
-    position: [0, 0.55, -2.8],
-  },
-  {
-    id: 'mailbox',
-    title: 'Letter Box',
-    subtitle: 'Leave an anonymous question',
-    route: '/mailbox',
-    color: '#f07f6f',
-    position: [3.2, 0.55, -0.6],
-  },
-];
+import { WORLD_AREAS } from '@/data/worldNodes';
 
 function Ground() {
   const grid = useMemo(() => new THREE.GridHelper(10, 20, '#5a6678', '#253041'), []);
@@ -127,7 +101,7 @@ function WorldNode({ node, isActive, onHover, onSelect }) {
   );
 }
 
-function Scene({ activeNode, onHover, onSelect }) {
+function Scene({ nodes, activeNode, onHover, onSelect }) {
   return (
     <>
       <CameraSetup />
@@ -139,7 +113,7 @@ function Scene({ activeNode, onHover, onSelect }) {
       <pointLight position={[3, 2.1, 2]} color="#f07f6f" intensity={1.5} />
       <Ground />
       <Companion33 />
-      {WORLD_NODES.map((node) => (
+      {nodes.map((node) => (
         <WorldNode
           key={node.id}
           node={node}
@@ -174,10 +148,24 @@ function CameraSetup() {
   return null;
 }
 
-export { WORLD_NODES };
+export default function WorldStage({
+  nodes = WORLD_AREAS,
+  activeNode,
+  onHoverNode,
+  onSelectNode,
+  lowMode = false,
+}) {
+  const [internalActiveNode, setInternalActiveNode] = useState(nodes[0]);
+  const visibleActiveNode = activeNode || internalActiveNode;
 
-export default function WorldStage({ onSelectNode }) {
-  const [activeNode, setActiveNode] = useState(WORLD_NODES[0]);
+  const handleHover = (node) => {
+    setInternalActiveNode(node);
+    onHoverNode?.(node);
+  };
+
+  if (lowMode) {
+    return null;
+  }
 
   return (
     <div className="world-stage">
@@ -187,7 +175,12 @@ export default function WorldStage({ onSelectNode }) {
         dpr={[1, 1.8]}
         gl={{ preserveDrawingBuffer: true }}
       >
-        <Scene activeNode={activeNode} onHover={setActiveNode} onSelect={onSelectNode} />
+        <Scene
+          nodes={nodes}
+          activeNode={visibleActiveNode}
+          onHover={handleHover}
+          onSelect={onSelectNode}
+        />
       </Canvas>
     </div>
   );

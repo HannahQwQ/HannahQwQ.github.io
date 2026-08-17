@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './views/Home';
+import Start from './views/Start';
+import Avatar from './views/Avatar';
+import World from './views/World';
 import Mailbox from './views/Mailbox';
 import About from './views/InfoPage/About';
 import Contact from './views/InfoPage/Contact';
@@ -10,8 +12,9 @@ function App() {
     <Router>
       <div className="app-viewport">
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/world" element={<Home />} />
+          <Route path="/" element={<Start />} />
+          <Route path="/avatar" element={<Avatar />} />
+          <Route path="/world" element={<World />} />
           <Route path="/mailbox" element={<Mailbox />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
