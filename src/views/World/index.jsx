@@ -4,6 +4,7 @@ import WorldStage from '@/components/world/WorldStage';
 import WorldHUD from '@/components/overlay/WorldHUD';
 import ObjectPreviewPanel from '@/components/overlay/ObjectPreviewPanel';
 import Floating33Chat from '@/components/overlay/Floating33Chat';
+import useKeyboardMovement from '@/hooks/useKeyboardMovement';
 import { DEFAULT_VISITOR_SIGNAL, WORLD_AREAS } from '@/data/worldNodes';
 import './World.css';
 
@@ -35,6 +36,7 @@ export default function World() {
   const [activeNode, setActiveNode] = useState(WORLD_AREAS[0]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const visitorPosition = useKeyboardMovement();
 
   const selectNode = (node) => {
     setActiveNode(node);
@@ -52,6 +54,7 @@ export default function World() {
         activeNode={activeNode}
         onHoverNode={(node) => node && setActiveNode(node)}
         onSelectNode={selectNode}
+        visitorPosition={visitorPosition}
         lowMode={effectiveLowMode}
       />
 
@@ -71,6 +74,16 @@ export default function World() {
           ))}
           <div className="fallback-companion" style={{ '--visitor-color': visitorSignal.color }}>
             33
+          </div>
+          <div
+            className="fallback-visitor"
+            style={{
+              '--visitor-color': visitorSignal.color,
+              left: `${50 + visitorPosition.x * 8}%`,
+              top: `${54 + visitorPosition.z * 8}%`,
+            }}
+          >
+            You
           </div>
         </div>
       </section>
@@ -98,7 +111,7 @@ export default function World() {
 
       <div className="world-status">
         <span>{effectiveLowMode ? '2D fallback active' : 'Drag to orbit'}</span>
-        <span>Hover to preview</span>
+        <span>WASD / Arrow keys to move</span>
         <Link to="/avatar">Edit signal</Link>
       </div>
     </main>

@@ -51,6 +51,36 @@ function Companion33() {
   );
 }
 
+function VisitorMarker({ position }) {
+  return (
+    <group position={[position.x, 0.46, position.z]}>
+      <mesh castShadow>
+        <sphereGeometry args={[0.22, 28, 28]} />
+        <meshStandardMaterial
+          color="#f7f3e8"
+          roughness={0.28}
+          metalness={0.05}
+          emissive="#58c7d7"
+          emissiveIntensity={0.16}
+        />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.25, 0]}>
+        <ringGeometry args={[0.32, 0.38, 30]} />
+        <meshBasicMaterial color="#58c7d7" transparent opacity={0.62} />
+      </mesh>
+      <Text
+        position={[0, 0.42, 0]}
+        fontSize={0.14}
+        color="#f8fafc"
+        anchorX="center"
+        anchorY="middle"
+      >
+        You
+      </Text>
+    </group>
+  );
+}
+
 function WorldNode({ node, isActive, onHover, onSelect }) {
   const scale = isActive ? 1.08 : 1;
 
@@ -101,7 +131,7 @@ function WorldNode({ node, isActive, onHover, onSelect }) {
   );
 }
 
-function Scene({ nodes, activeNode, onHover, onSelect }) {
+function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition }) {
   return (
     <>
       <CameraSetup />
@@ -113,6 +143,7 @@ function Scene({ nodes, activeNode, onHover, onSelect }) {
       <pointLight position={[3, 2.1, 2]} color="#f07f6f" intensity={1.5} />
       <Ground />
       <Companion33 />
+      <VisitorMarker position={visitorPosition} />
       {nodes.map((node) => (
         <WorldNode
           key={node.id}
@@ -153,6 +184,7 @@ export default function WorldStage({
   activeNode,
   onHoverNode,
   onSelectNode,
+  visitorPosition = { x: 0, z: 0.7 },
   lowMode = false,
 }) {
   const [internalActiveNode, setInternalActiveNode] = useState(nodes[0]);
@@ -180,6 +212,7 @@ export default function WorldStage({
           activeNode={visibleActiveNode}
           onHover={handleHover}
           onSelect={onSelectNode}
+          visitorPosition={visitorPosition}
         />
       </Canvas>
     </div>
