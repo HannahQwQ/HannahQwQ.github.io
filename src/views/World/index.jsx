@@ -37,8 +37,9 @@ export default function World() {
   const [selectedNode, setSelectedNode] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [cameraMode, setCameraMode] = useState('thirdPerson');
+  const [cameraLook, setCameraLook] = useState({ yaw: 0, pitch: 0.04 });
   const [mouseLookActive, setMouseLookActive] = useState(false);
-  const visitorPosition = useKeyboardMovement();
+  const visitorPosition = useKeyboardMovement(undefined, cameraLook.yaw);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -76,6 +77,8 @@ export default function World() {
         visitorPosition={visitorPosition}
         lowMode={effectiveLowMode}
         cameraMode={cameraMode}
+        cameraLook={cameraLook}
+        onCameraLookChange={setCameraLook}
         onMouseLookChange={setMouseLookActive}
       />
 
@@ -135,8 +138,9 @@ export default function World() {
 
       <div className="world-status">
         <span>{effectiveLowMode ? '2D fallback active' : cameraMode === 'thirdPerson' ? 'MMO camera' : 'First-person camera'}</span>
-        <span>WASD / Arrow keys to move</span>
+        <span>WASD moves with view</span>
         <span>{mouseLookActive ? 'Mouse look active · Esc to release' : 'Click scene + move mouse'}</span>
+        <span>Wheel to zoom</span>
         <span>V to switch view</span>
         <Link to="/avatar">Edit signal</Link>
       </div>

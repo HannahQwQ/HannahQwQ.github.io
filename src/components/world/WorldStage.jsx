@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float, Html, Text } from '@react-three/drei';
+import { Float, Html, PerspectiveCamera, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { WORLD_AREAS } from '@/data/worldNodes';
 
 const MOUSE_SENSITIVITY = 0.0025;
 const MIN_LOOK_PITCH = -0.72;
 const MAX_LOOK_PITCH = 0.56;
+const DEFAULT_CAMERA_DISTANCE = 4.35;
+const MIN_CAMERA_DISTANCE = 2.35;
+const MAX_CAMERA_DISTANCE = 7.2;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -250,10 +253,24 @@ function WorldNode({ node, isActive, onHover, onSelect }) {
   );
 }
 
-function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition, cameraMode, cameraLook }) {
+function Scene({
+  nodes,
+  activeNode,
+  onHover,
+  onSelect,
+  visitorPosition,
+  cameraMode,
+  cameraLook,
+  cameraDistance,
+}) {
   return (
     <>
-      <CameraRig visitorPosition={visitorPosition} cameraMode={cameraMode} cameraLook={cameraLook} />
+      <CameraRig
+        visitorPosition={visitorPosition}
+        cameraMode={cameraMode}
+        cameraLook={cameraLook}
+        cameraDistance={cameraDistance}
+      />
       <color attach="background" args={['#eef4f8']} />
       <fog attach="fog" args={['#eef4f8', 2.2, 11]} />
       <ambientLight intensity={1.05} />
@@ -279,7 +296,7 @@ function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition, cameraMo
   );
 }
 
-function CameraRig({ visitorPosition, cameraMode, cameraLook }) {
+function CameraRig({ visitorPosition, cameraMode, cameraLook, cameraDistance }) {
   const { camera } = useThree();
   const cameraTarget = useMemo(() => new THREE.Vector3(), []);
   const lookTarget = useMemo(() => new THREE.Vector3(), []);
@@ -300,14 +317,13 @@ function CameraRig({ visitorPosition, cameraMode, cameraLook }) {
       cameraTarget.set(visitorPosition.x, groundY + 1.18, visitorPosition.z);
       lookTarget.copy(cameraTarget).addScaledVector(forward, 4.2);
     } else {
-      const horizontalDistance = 4.35;
-      const cameraLift = 2.25 + cameraLook.pitch * 1.4;
+      const cameraLift = 1.2 + cameraDistance * 0.24 + cameraLook.pitch * 1.4;
       forwardFlat.set(Math.sin(cameraLook.yaw), 0, -Math.cos(cameraLook.yaw));
 
       cameraTarget.set(
-        visitorPosition.x - forwardFlat.x * horizontalDistance,
+        visitorPosition.x - forwardFlat.x * cameraDistance,
         groundY + cameraLift,
-        visitorPosition.z - forwardFlat.z * horizontalDistance,
+        visitorPosition.z - forwardFlat.z * cameraDistance,
       );
       lookTarget.set(
         visitorPosition.x + forwardFlat.x * 1.55,
@@ -331,18 +347,24 @@ export default function WorldStage({
   visitorPosition = { x: 0, z: 0.7 },
   lowMode = false,
   cameraMode = 'thirdPerson',
+  cameraLook = { yaw: 0, pitch: 0.04 },
+  onCameraLookChange,
   onMouseLookChange,
 }) {
   const stageRef = useRef(null);
   const [internalActiveNode, setInternalActiveNode] = useState(nodes[0]);
-  const [cameraLook, setCameraLook] = useState({ yaw: 0, pitch: 0.04 });
+  const [cameraDistance, setCameraDistance] = useState(DEFAULT_CAMERA_DISTANCE);
   const visibleActiveNode = activeNode || internalActiveNode;
+  const cameraFov =
+    cameraMode === 'firstPerson'
+      ? clamp(62 - (cameraDistance - MIN_CAMERA_DISTANCE) * 4.8, 42, 62)
+      : 54;
 
   useEffect(() => {
     const handleMouseMove = (event) => {
       if (document.pointerLockElement !== stageRef.current) return;
 
-      setCameraLook((current) => ({
+      onCameraLookChange?.((current) => ({
         yaw: current.yaw + event.movementX * MOUSE_SENSITIVITY,
         pitch: clamp(
           current.pitch - event.movementY * MOUSE_SENSITIVITY,
@@ -377,7 +399,7 @@ export default function WorldStage({
       document.removeEventListener('pointerlockerror', handlePointerLockError);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onMouseLookChange]);
+  }, [onCameraLookChange, onMouseLookChange]);
 
   const handleHover = (node) => {
     setInternalActiveNode(node);
@@ -391,18 +413,25 @@ export default function WorldStage({
     lockRequest?.catch?.(() => onMouseLookChange?.(false));
   };
 
+  const handleWheel = (event) => {
+    event.preventDefault();
+    setCameraDistance((current) =>
+      clamp(current + event.deltaY * 0.0048, MIN_CAMERA_DISTANCE, MAX_CAMERA_DISTANCE),
+    );
+  };
+
   if (lowMode) {
     return null;
   }
 
   return (
-    <div className="world-stage" ref={stageRef} onClick={handleStageClick}>
+    <div className="world-stage" ref={stageRef} onClick={handleStageClick} onWheel={handleWheel}>
       <Canvas
         shadows
-        camera={{ position: [0, 2.4, 5.2], fov: 54, near: 0.05, far: 55 }}
         dpr={[1, 1.8]}
         gl={{ preserveDrawingBuffer: true }}
       >
+        <PerspectiveCamera makeDefault position={[0, 2.4, 5.2]} fov={cameraFov} near={0.05} far={55} />
         <Scene
           nodes={nodes}
           activeNode={visibleActiveNode}
@@ -411,6 +440,7 @@ export default function WorldStage({
           visitorPosition={visitorPosition}
           cameraMode={cameraMode}
           cameraLook={cameraLook}
+          cameraDistance={cameraDistance}
         />
       </Canvas>
     </div>
