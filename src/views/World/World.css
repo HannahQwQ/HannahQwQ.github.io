@@ -195,7 +195,7 @@
 }
 
 .world-brand h1 {
-  color: #f8fafc;
+  color: rgba(31, 41, 55, 0.72);
   font-size: clamp(2rem, 5vw, 5.25rem);
   line-height: 0.96;
   letter-spacing: 0;
@@ -204,7 +204,7 @@
 .world-brand p {
   margin-top: 14px;
   max-width: 520px;
-  color: rgba(248, 250, 252, 0.68);
+  color: rgba(31, 41, 55, 0.56);
   line-height: 1.55;
 }
 

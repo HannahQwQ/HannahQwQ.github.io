@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import WorldStage from '@/components/world/WorldStage';
 import WorldHUD from '@/components/overlay/WorldHUD';
@@ -36,7 +36,25 @@ export default function World() {
   const [activeNode, setActiveNode] = useState(WORLD_AREAS[0]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [cameraMode, setCameraMode] = useState('thirdPerson');
   const visitorPosition = useKeyboardMovement();
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.code !== 'KeyV') return;
+
+      const target = event.target;
+      const tagName = target?.tagName?.toLowerCase();
+      if (tagName === 'input' || tagName === 'textarea' || target?.isContentEditable) return;
+
+      event.preventDefault();
+      setCameraMode((current) => (current === 'thirdPerson' ? 'firstPerson' : 'thirdPerson'));
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const selectNode = (node) => {
     setActiveNode(node);
@@ -56,6 +74,7 @@ export default function World() {
         onSelectNode={selectNode}
         visitorPosition={visitorPosition}
         lowMode={effectiveLowMode}
+        cameraMode={cameraMode}
       />
 
       <section
@@ -113,8 +132,9 @@ export default function World() {
       />
 
       <div className="world-status">
-        <span>{effectiveLowMode ? '2D fallback active' : 'Drag to orbit'}</span>
+        <span>{effectiveLowMode ? '2D fallback active' : cameraMode === 'thirdPerson' ? 'MMO camera' : 'First-person camera'}</span>
         <span>WASD / Arrow keys to move</span>
+        <span>V to switch view</span>
         <Link to="/avatar">Edit signal</Link>
       </div>
     </main>

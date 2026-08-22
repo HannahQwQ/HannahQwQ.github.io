@@ -1,31 +1,138 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float, Html, OrbitControls, Text } from '@react-three/drei';
+import { Float, Html, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { WORLD_AREAS } from '@/data/worldNodes';
 
-function Ground() {
-  const grid = useMemo(() => new THREE.GridHelper(10, 20, '#5a6678', '#253041'), []);
+function getTerrainHeight(x, z) {
+  const ridge = Math.sin(x * 0.72) * 0.18 + Math.cos(z * 0.58) * 0.14;
+  const mainSlope = Math.max(0, 1 - Math.hypot(x + 2.6, z + 2.4) / 4.8) * 1.35;
+  const farRise = Math.max(0, 1 - Math.hypot(x - 3.4, z + 4.6) / 4.2) * 0.82;
+  const shoreDip = Math.max(0, 1 - Math.hypot(x - 1.8, z - 1.65) / 2.2) * 0.42;
+
+  return Math.max(-0.08, ridge + mainSlope + farRise - shoreDip);
+}
+
+function FogTerrain() {
+  const terrain = useMemo(() => {
+    const geometry = new THREE.PlaneGeometry(18, 18, 112, 112);
+    const positions = geometry.attributes.position;
+
+    for (let index = 0; index < positions.count; index += 1) {
+      const x = positions.getX(index);
+      const z = -positions.getY(index);
+      positions.setZ(index, getTerrainHeight(x, z));
+    }
+
+    geometry.rotateX(-Math.PI / 2);
+    geometry.computeVertexNormals();
+    return geometry;
+  }, []);
 
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[5.4, 72]} />
-        <meshStandardMaterial color="#151c26" roughness={0.82} metalness={0.05} />
+      <mesh geometry={terrain} receiveShadow>
+        <meshStandardMaterial
+          color="#f8fbff"
+          roughness={0.96}
+          metalness={0.02}
+          transparent
+          opacity={0.72}
+          flatShading
+        />
       </mesh>
-      <primitive object={grid} position={[0, 0.012, 0]} />
-      <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[4.65, 4.75, 72]} />
-        <meshBasicMaterial color="#58c7d7" transparent opacity={0.55} />
+      <mesh position={[-2.8, 0.82, -2.65]} rotation={[-Math.PI / 2, 0, -0.3]}>
+        <circleGeometry args={[2.2, 72]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.18} depthWrite={false} />
+      </mesh>
+      <mesh position={[3.1, 0.5, -4.45]} rotation={[-Math.PI / 2, 0, 0.12]}>
+        <circleGeometry args={[2.8, 72]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.12} depthWrite={false} />
       </mesh>
     </group>
   );
 }
 
-function Companion33() {
+function WaterSurface() {
+  return (
+    <group>
+      <mesh position={[1.82, 0.045, 1.65]} rotation={[-Math.PI / 2, 0, -0.2]} scale={[1.9, 1.05, 1]}>
+        <circleGeometry args={[1, 96]} />
+        <meshStandardMaterial
+          color="#062c5f"
+          roughness={0.24}
+          metalness={0.08}
+          transparent
+          opacity={0.82}
+          emissive="#063b7d"
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+      <mesh position={[0, -0.05, -6.6]} rotation={[-Math.PI / 2, 0, 0]} scale={[8.4, 2.25, 1]}>
+        <circleGeometry args={[1, 112]} />
+        <meshStandardMaterial
+          color="#031b3f"
+          roughness={0.18}
+          metalness={0.04}
+          transparent
+          opacity={0.76}
+          emissive="#04295c"
+          emissiveIntensity={0.16}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function MistLayer() {
+  const wisps = useMemo(
+    () => [
+      [-4.2, 0.28, -1.6, 3.5, 0.34],
+      [3.6, 0.36, 0.3, 3.1, 0.28],
+      [0.4, 0.72, -3.8, 4.2, 0.22],
+      [-0.6, 1.2, 2.4, 3.8, 0.16],
+      [4.7, 1.05, -4.7, 4.5, 0.12],
+    ],
+    [],
+  );
+
+  return (
+    <group>
+      {wisps.map(([x, y, z, radius, opacity]) => (
+        <mesh key={`${x}-${z}`} position={[x, y, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[radius, 72]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={opacity} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function MountainSilhouette() {
+  return (
+    <group position={[0, 0, -7.6]}>
+      {[-4.8, -2.5, 0.2, 2.7, 5.1].map((x, index) => (
+        <mesh
+          key={x}
+          position={[x, 1.25 + index * 0.12, 0]}
+          rotation={[0.12, 0, index % 2 ? 0.08 : -0.08]}
+          scale={[1.35 + index * 0.18, 1.55 + index * 0.28, 0.7]}
+        >
+          <coneGeometry args={[1.25, 2.8, 5]} />
+          <meshStandardMaterial color="#eef6ff" transparent opacity={0.16} roughness={1} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Companion33({ visitorPosition }) {
+  const height = getTerrainHeight(visitorPosition.x, visitorPosition.z);
+  const companionPosition = [visitorPosition.x + 0.78, height + 1.18, visitorPosition.z + 0.88];
+
   return (
     <Float speed={1.4} rotationIntensity={0.12} floatIntensity={0.22}>
-      <group position={[0, 1.15, 1.45]}>
+      <group position={companionPosition}>
         <mesh castShadow>
           <sphereGeometry args={[0.42, 36, 36]} />
           <meshStandardMaterial color="#f7f3e8" roughness={0.34} metalness={0.08} />
@@ -44,7 +151,7 @@ function Companion33() {
           33
         </Text>
         <Html position={[0.72, 0.22, 0]} center distanceFactor={7}>
-          <div className="world-speech">I will keep this world small enough to enter.</div>
+          <div className="world-speech">The map is mostly mist. Follow the blue water and the gates.</div>
         </Html>
       </group>
     </Float>
@@ -52,8 +159,10 @@ function Companion33() {
 }
 
 function VisitorMarker({ position }) {
+  const y = getTerrainHeight(position.x, position.z) + 0.42;
+
   return (
-    <group position={[position.x, 0.46, position.z]}>
+    <group position={[position.x, y, position.z]}>
       <mesh castShadow>
         <sphereGeometry args={[0.22, 28, 28]} />
         <meshStandardMaterial
@@ -83,11 +192,13 @@ function VisitorMarker({ position }) {
 
 function WorldNode({ node, isActive, onHover, onSelect }) {
   const scale = isActive ? 1.08 : 1;
+  const [x, , z] = node.position;
+  const y = getTerrainHeight(x, z) + 0.68;
 
   return (
     <Float speed={1.1} rotationIntensity={0.08} floatIntensity={0.14}>
       <group
-        position={node.position}
+        position={[x, y, z]}
         scale={scale}
         onPointerOver={(event) => {
           event.stopPropagation();
@@ -131,18 +242,21 @@ function WorldNode({ node, isActive, onHover, onSelect }) {
   );
 }
 
-function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition }) {
+function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition, cameraMode }) {
   return (
     <>
-      <CameraSetup />
-      <color attach="background" args={['#0d1118']} />
-      <fog attach="fog" args={['#0d1118', 8, 18]} />
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[4, 6, 3]} intensity={1.4} castShadow />
-      <pointLight position={[-3, 2.5, 3]} color="#58c7d7" intensity={2.3} />
-      <pointLight position={[3, 2.1, 2]} color="#f07f6f" intensity={1.5} />
-      <Ground />
-      <Companion33 />
+      <CameraRig visitorPosition={visitorPosition} cameraMode={cameraMode} />
+      <color attach="background" args={['#eef4f8']} />
+      <fog attach="fog" args={['#eef4f8', 2.2, 11]} />
+      <ambientLight intensity={1.05} />
+      <hemisphereLight args={['#ffffff', '#bfd8ef', 1.1]} />
+      <directionalLight position={[3.8, 7.6, 4.2]} intensity={1.75} castShadow />
+      <pointLight position={[0, 2.5, 3.5]} color="#ffffff" intensity={1.4} />
+      <FogTerrain />
+      <WaterSurface />
+      <MountainSilhouette />
+      <MistLayer />
+      <Companion33 visitorPosition={visitorPosition} />
       <VisitorMarker position={visitorPosition} />
       {nodes.map((node) => (
         <WorldNode
@@ -153,27 +267,28 @@ function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition }) {
           onSelect={onSelect}
         />
       ))}
-      <OrbitControls
-        target={[0, 0.5, 0]}
-        enablePan={false}
-        minDistance={4.5}
-        maxDistance={7.8}
-        minPolarAngle={Math.PI / 4}
-        maxPolarAngle={Math.PI / 2.25}
-      />
     </>
   );
 }
 
-function CameraSetup() {
+function CameraRig({ visitorPosition, cameraMode }) {
   const { camera } = useThree();
-
-  useEffect(() => {
-    camera.lookAt(0, 0.5, 0);
-  }, [camera]);
+  const cameraTarget = useMemo(() => new THREE.Vector3(), []);
+  const lookTarget = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
-    camera.lookAt(0, 0.5, 0);
+    const groundY = getTerrainHeight(visitorPosition.x, visitorPosition.z);
+
+    if (cameraMode === 'firstPerson') {
+      cameraTarget.set(visitorPosition.x, groundY + 1.18, visitorPosition.z + 0.18);
+      lookTarget.set(visitorPosition.x, groundY + 1.08, visitorPosition.z - 4.2);
+    } else {
+      cameraTarget.set(visitorPosition.x, groundY + 2.45, visitorPosition.z + 4.25);
+      lookTarget.set(visitorPosition.x, groundY + 0.66, visitorPosition.z - 1.35);
+    }
+
+    camera.position.lerp(cameraTarget, 0.08);
+    camera.lookAt(lookTarget);
   });
 
   return null;
@@ -186,6 +301,7 @@ export default function WorldStage({
   onSelectNode,
   visitorPosition = { x: 0, z: 0.7 },
   lowMode = false,
+  cameraMode = 'thirdPerson',
 }) {
   const [internalActiveNode, setInternalActiveNode] = useState(nodes[0]);
   const visibleActiveNode = activeNode || internalActiveNode;
@@ -203,7 +319,7 @@ export default function WorldStage({
     <div className="world-stage">
       <Canvas
         shadows
-        camera={{ position: [0, 1.6, 7], fov: 48 }}
+        camera={{ position: [0, 2.4, 5.2], fov: 54, near: 0.05, far: 55 }}
         dpr={[1, 1.8]}
         gl={{ preserveDrawingBuffer: true }}
       >
@@ -213,6 +329,7 @@ export default function WorldStage({
           onHover={handleHover}
           onSelect={onSelectNode}
           visitorPosition={visitorPosition}
+          cameraMode={cameraMode}
         />
       </Canvas>
     </div>
