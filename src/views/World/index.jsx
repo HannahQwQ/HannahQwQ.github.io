@@ -87,6 +87,16 @@ export default function World() {
         aria-label="Interactive world map"
       >
         <div className="fallback-orbit">
+          <div className="minimap-layer minimap-sea-channel" aria-hidden="true" />
+          <div className="minimap-layer minimap-land-west" aria-hidden="true" />
+          <div className="minimap-layer minimap-land-east" aria-hidden="true" />
+          <div className="minimap-layer minimap-ridge-west" aria-hidden="true" />
+          <div className="minimap-layer minimap-ridge-east" aria-hidden="true" />
+          <div className="minimap-layer minimap-inner-lake" aria-hidden="true" />
+          <div className="minimap-layer minimap-fog-bridge" aria-hidden="true" />
+          <div className="minimap-layer minimap-fault-line" aria-hidden="true" />
+          <div className="minimap-layer minimap-fog-west" aria-hidden="true" />
+          <div className="minimap-layer minimap-fog-east" aria-hidden="true" />
           {WORLD_AREAS.map((node) => (
             <button
               key={node.id}
@@ -106,8 +116,8 @@ export default function World() {
             className="fallback-visitor"
             style={{
               '--visitor-color': visitorSignal.color,
-              left: `${50 + visitorPosition.x * 8}%`,
-              top: `${54 + visitorPosition.z * 8}%`,
+              left: `${50 + visitorPosition.x * 7}%`,
+              top: `${56 + visitorPosition.z * 5.6}%`,
             }}
           >
             You
