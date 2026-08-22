@@ -1,8 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Html, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { WORLD_AREAS } from '@/data/worldNodes';
+
+const MOUSE_SENSITIVITY = 0.0025;
+const MIN_LOOK_PITCH = -0.72;
+const MAX_LOOK_PITCH = 0.56;
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
 
 function getTerrainHeight(x, z) {
   const ridge = Math.sin(x * 0.72) * 0.18 + Math.cos(z * 0.58) * 0.14;
@@ -242,10 +250,10 @@ function WorldNode({ node, isActive, onHover, onSelect }) {
   );
 }
 
-function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition, cameraMode }) {
+function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition, cameraMode, cameraLook }) {
   return (
     <>
-      <CameraRig visitorPosition={visitorPosition} cameraMode={cameraMode} />
+      <CameraRig visitorPosition={visitorPosition} cameraMode={cameraMode} cameraLook={cameraLook} />
       <color attach="background" args={['#eef4f8']} />
       <fog attach="fog" args={['#eef4f8', 2.2, 11]} />
       <ambientLight intensity={1.05} />
@@ -271,20 +279,41 @@ function Scene({ nodes, activeNode, onHover, onSelect, visitorPosition, cameraMo
   );
 }
 
-function CameraRig({ visitorPosition, cameraMode }) {
+function CameraRig({ visitorPosition, cameraMode, cameraLook }) {
   const { camera } = useThree();
   const cameraTarget = useMemo(() => new THREE.Vector3(), []);
   const lookTarget = useMemo(() => new THREE.Vector3(), []);
+  const forward = useMemo(() => new THREE.Vector3(), []);
+  const forwardFlat = useMemo(() => new THREE.Vector3(), []);
 
   useFrame(() => {
     const groundY = getTerrainHeight(visitorPosition.x, visitorPosition.z);
+    const cosPitch = Math.cos(cameraLook.pitch);
+
+    forward.set(
+      Math.sin(cameraLook.yaw) * cosPitch,
+      Math.sin(cameraLook.pitch),
+      -Math.cos(cameraLook.yaw) * cosPitch,
+    );
 
     if (cameraMode === 'firstPerson') {
-      cameraTarget.set(visitorPosition.x, groundY + 1.18, visitorPosition.z + 0.18);
-      lookTarget.set(visitorPosition.x, groundY + 1.08, visitorPosition.z - 4.2);
+      cameraTarget.set(visitorPosition.x, groundY + 1.18, visitorPosition.z);
+      lookTarget.copy(cameraTarget).addScaledVector(forward, 4.2);
     } else {
-      cameraTarget.set(visitorPosition.x, groundY + 2.45, visitorPosition.z + 4.25);
-      lookTarget.set(visitorPosition.x, groundY + 0.66, visitorPosition.z - 1.35);
+      const horizontalDistance = 4.35;
+      const cameraLift = 2.25 + cameraLook.pitch * 1.4;
+      forwardFlat.set(Math.sin(cameraLook.yaw), 0, -Math.cos(cameraLook.yaw));
+
+      cameraTarget.set(
+        visitorPosition.x - forwardFlat.x * horizontalDistance,
+        groundY + cameraLift,
+        visitorPosition.z - forwardFlat.z * horizontalDistance,
+      );
+      lookTarget.set(
+        visitorPosition.x + forwardFlat.x * 1.55,
+        groundY + 0.68 + cameraLook.pitch * 1.2,
+        visitorPosition.z + forwardFlat.z * 1.55,
+      );
     }
 
     camera.position.lerp(cameraTarget, 0.08);
@@ -302,13 +331,64 @@ export default function WorldStage({
   visitorPosition = { x: 0, z: 0.7 },
   lowMode = false,
   cameraMode = 'thirdPerson',
+  onMouseLookChange,
 }) {
+  const stageRef = useRef(null);
   const [internalActiveNode, setInternalActiveNode] = useState(nodes[0]);
+  const [cameraLook, setCameraLook] = useState({ yaw: 0, pitch: 0.04 });
   const visibleActiveNode = activeNode || internalActiveNode;
+
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      if (document.pointerLockElement !== stageRef.current) return;
+
+      setCameraLook((current) => ({
+        yaw: current.yaw + event.movementX * MOUSE_SENSITIVITY,
+        pitch: clamp(
+          current.pitch - event.movementY * MOUSE_SENSITIVITY,
+          MIN_LOOK_PITCH,
+          MAX_LOOK_PITCH,
+        ),
+      }));
+    };
+
+    const handlePointerLockChange = () => {
+      onMouseLookChange?.(document.pointerLockElement === stageRef.current);
+    };
+
+    const handlePointerLockError = () => {
+      onMouseLookChange?.(false);
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.code !== 'Escape' || document.pointerLockElement !== stageRef.current) return;
+      document.exitPointerLock?.();
+      onMouseLookChange?.(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+    document.addEventListener('pointerlockerror', handlePointerLockError);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+      document.removeEventListener('pointerlockerror', handlePointerLockError);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onMouseLookChange]);
 
   const handleHover = (node) => {
     setInternalActiveNode(node);
     onHoverNode?.(node);
+  };
+
+  const handleStageClick = () => {
+    if (document.pointerLockElement || !stageRef.current?.requestPointerLock) return;
+    const lockRequest = stageRef.current.requestPointerLock();
+    onMouseLookChange?.(true);
+    lockRequest?.catch?.(() => onMouseLookChange?.(false));
   };
 
   if (lowMode) {
@@ -316,7 +396,7 @@ export default function WorldStage({
   }
 
   return (
-    <div className="world-stage">
+    <div className="world-stage" ref={stageRef} onClick={handleStageClick}>
       <Canvas
         shadows
         camera={{ position: [0, 2.4, 5.2], fov: 54, near: 0.05, far: 55 }}
@@ -330,6 +410,7 @@ export default function WorldStage({
           onSelect={onSelectNode}
           visitorPosition={visitorPosition}
           cameraMode={cameraMode}
+          cameraLook={cameraLook}
         />
       </Canvas>
     </div>
