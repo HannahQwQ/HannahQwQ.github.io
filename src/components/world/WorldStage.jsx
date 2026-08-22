@@ -15,18 +15,42 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function getTerrainHeight(x, z) {
-  const ridge = Math.sin(x * 0.72) * 0.18 + Math.cos(z * 0.58) * 0.14;
-  const mainSlope = Math.max(0, 1 - Math.hypot(x + 2.6, z + 2.4) / 4.8) * 1.35;
-  const farRise = Math.max(0, 1 - Math.hypot(x - 3.4, z + 4.6) / 4.2) * 0.82;
-  const shoreDip = Math.max(0, 1 - Math.hypot(x - 1.8, z - 1.65) / 2.2) * 0.42;
+function rotatedEllipseMask(x, z, centerX, centerZ, radiusX, radiusZ, rotation = 0) {
+  const cos = Math.cos(rotation);
+  const sin = Math.sin(rotation);
+  const dx = x - centerX;
+  const dz = z - centerZ;
+  const localX = dx * cos - dz * sin;
+  const localZ = dx * sin + dz * cos;
+  const distance = Math.hypot(localX / radiusX, localZ / radiusZ);
 
-  return Math.max(-0.08, ridge + mainSlope + farRise - shoreDip);
+  return clamp(1 - distance, 0, 1);
+}
+
+function getTerrainHeight(x, z) {
+  const seaChannel = rotatedEllipseMask(x, z, 0.12, -0.55, 3.35, 8.2, -0.28);
+  const innerLake = rotatedEllipseMask(x, z, -3.25, 2.55, 1.55, 0.92, -0.12);
+  const westHighland = rotatedEllipseMask(x, z, -4.2, -2.75, 3.9, 3.1, -0.18);
+  const eastHighland = rotatedEllipseMask(x, z, 4.15, -2.1, 3.35, 4.25, 0.18);
+  const southShelf = rotatedEllipseMask(x, z, -3.4, 3.15, 2.7, 1.9, -0.28);
+  const mistBridge = rotatedEllipseMask(x, z, 0.05, 0.65, 1.35, 0.82, -0.2);
+  const ridgeGrain = Math.sin(x * 0.64 + z * 0.22) * 0.08 + Math.cos(z * 0.52) * 0.06;
+
+  const land =
+    0.1 +
+    ridgeGrain +
+    westHighland * 1.55 +
+    eastHighland * 1.35 +
+    southShelf * 0.72 +
+    mistBridge * 0.48;
+  const waterCut = seaChannel * 0.78 * (1 - mistBridge * 0.68) + innerLake * 0.56;
+
+  return Math.max(-0.18, land - waterCut);
 }
 
 function FogTerrain() {
   const terrain = useMemo(() => {
-    const geometry = new THREE.PlaneGeometry(18, 18, 112, 112);
+    const geometry = new THREE.PlaneGeometry(24, 18, 144, 112);
     const positions = geometry.attributes.position;
 
     for (let index = 0; index < positions.count; index += 1) {
@@ -49,16 +73,19 @@ function FogTerrain() {
           metalness={0.02}
           transparent
           opacity={0.72}
-          flatShading
         />
       </mesh>
-      <mesh position={[-2.8, 0.82, -2.65]} rotation={[-Math.PI / 2, 0, -0.3]}>
+      <mesh position={[-4.2, 1.24, -2.75]} rotation={[-Math.PI / 2, 0, -0.18]} scale={[1.55, 0.95, 1]}>
         <circleGeometry args={[2.2, 72]} />
         <meshBasicMaterial color="#ffffff" transparent opacity={0.18} depthWrite={false} />
       </mesh>
-      <mesh position={[3.1, 0.5, -4.45]} rotation={[-Math.PI / 2, 0, 0.12]}>
-        <circleGeometry args={[2.8, 72]} />
+      <mesh position={[4.2, 0.92, -2.1]} rotation={[-Math.PI / 2, 0, 0.18]} scale={[1.1, 1.45, 1]}>
+        <circleGeometry args={[2.4, 72]} />
         <meshBasicMaterial color="#ffffff" transparent opacity={0.12} depthWrite={false} />
+      </mesh>
+      <mesh position={[0.05, 0.14, 0.65]} rotation={[-Math.PI / 2, 0, -0.2]} scale={[1.35, 0.82, 1]}>
+        <circleGeometry args={[1, 72]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.42} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -67,27 +94,27 @@ function FogTerrain() {
 function WaterSurface() {
   return (
     <group>
-      <mesh position={[1.82, 0.045, 1.65]} rotation={[-Math.PI / 2, 0, -0.2]} scale={[1.9, 1.05, 1]}>
+      <mesh position={[0.12, 0.035, -0.55]} rotation={[-Math.PI / 2, 0, -0.28]} scale={[3.35, 8.2, 1]}>
         <circleGeometry args={[1, 96]} />
         <meshStandardMaterial
-          color="#062c5f"
+          color="#031b3f"
           roughness={0.24}
           metalness={0.08}
           transparent
           opacity={0.82}
-          emissive="#063b7d"
+          emissive="#04295c"
           emissiveIntensity={0.2}
         />
       </mesh>
-      <mesh position={[0, -0.05, -6.6]} rotation={[-Math.PI / 2, 0, 0]} scale={[8.4, 2.25, 1]}>
+      <mesh position={[-3.25, 0.07, 2.55]} rotation={[-Math.PI / 2, 0, -0.12]} scale={[1.55, 0.92, 1]}>
         <circleGeometry args={[1, 112]} />
         <meshStandardMaterial
-          color="#031b3f"
+          color="#062c5f"
           roughness={0.18}
           metalness={0.04}
           transparent
-          opacity={0.76}
-          emissive="#04295c"
+          opacity={0.8}
+          emissive="#063b7d"
           emissiveIntensity={0.16}
         />
       </mesh>
@@ -98,11 +125,11 @@ function WaterSurface() {
 function MistLayer() {
   const wisps = useMemo(
     () => [
-      [-4.2, 0.28, -1.6, 3.5, 0.34],
-      [3.6, 0.36, 0.3, 3.1, 0.28],
-      [0.4, 0.72, -3.8, 4.2, 0.22],
-      [-0.6, 1.2, 2.4, 3.8, 0.16],
-      [4.7, 1.05, -4.7, 4.5, 0.12],
+      [-4.7, 0.34, -1.2, 4.1, 0.34],
+      [4.3, 0.42, -0.4, 3.8, 0.28],
+      [0.2, 0.74, -3.4, 4.8, 0.22],
+      [-2.6, 1.08, 2.8, 3.9, 0.18],
+      [4.9, 1.16, -4.4, 4.6, 0.13],
     ],
     [],
   );
@@ -121,13 +148,18 @@ function MistLayer() {
 
 function MountainSilhouette() {
   return (
-    <group position={[0, 0, -7.6]}>
-      {[-4.8, -2.5, 0.2, 2.7, 5.1].map((x, index) => (
+    <group>
+      {[
+        [-5.7, -4.9, 1.7, 1.25, -0.16],
+        [-3.4, -4.7, 2.1, 1.45, 0.08],
+        [3.5, -5.2, 1.75, 1.35, 0.12],
+        [5.6, -4.4, 2.25, 1.6, -0.08],
+      ].map(([x, z, height, width, rotation]) => (
         <mesh
-          key={x}
-          position={[x, 1.25 + index * 0.12, 0]}
-          rotation={[0.12, 0, index % 2 ? 0.08 : -0.08]}
-          scale={[1.35 + index * 0.18, 1.55 + index * 0.28, 0.7]}
+          key={`${x}-${z}`}
+          position={[x, getTerrainHeight(x, z) + height * 0.38, z]}
+          rotation={[0.08, 0, rotation]}
+          scale={[width, height, 0.62]}
         >
           <coneGeometry args={[1.25, 2.8, 5]} />
           <meshStandardMaterial color="#eef6ff" transparent opacity={0.16} roughness={1} />
@@ -139,22 +171,22 @@ function MountainSilhouette() {
 
 function Companion33({ visitorPosition }) {
   const height = getTerrainHeight(visitorPosition.x, visitorPosition.z);
-  const companionPosition = [visitorPosition.x + 0.78, height + 1.18, visitorPosition.z + 0.88];
+  const companionPosition = [visitorPosition.x + 0.52, height + 0.74, visitorPosition.z + 0.58];
 
   return (
     <Float speed={1.4} rotationIntensity={0.12} floatIntensity={0.22}>
       <group position={companionPosition}>
         <mesh castShadow>
-          <sphereGeometry args={[0.42, 36, 36]} />
+          <sphereGeometry args={[0.24, 36, 36]} />
           <meshStandardMaterial color="#f7f3e8" roughness={0.34} metalness={0.08} />
         </mesh>
-        <mesh position={[0, -0.56, 0]} castShadow>
-          <capsuleGeometry args={[0.28, 0.58, 8, 24]} />
+        <mesh position={[0, -0.32, 0]} castShadow>
+          <capsuleGeometry args={[0.16, 0.34, 8, 24]} />
           <meshStandardMaterial color="#1f2937" roughness={0.58} />
         </mesh>
         <Text
-          position={[0, 0.68, 0]}
-          fontSize={0.18}
+          position={[0, 0.4, 0]}
+          fontSize={0.11}
           color="#f8fafc"
           anchorX="center"
           anchorY="middle"
@@ -170,12 +202,12 @@ function Companion33({ visitorPosition }) {
 }
 
 function VisitorMarker({ position }) {
-  const y = getTerrainHeight(position.x, position.z) + 0.42;
+  const y = getTerrainHeight(position.x, position.z) + 0.26;
 
   return (
     <group position={[position.x, y, position.z]}>
       <mesh castShadow>
-        <sphereGeometry args={[0.22, 28, 28]} />
+        <sphereGeometry args={[0.13, 28, 28]} />
         <meshStandardMaterial
           color="#f7f3e8"
           roughness={0.28}
@@ -184,13 +216,13 @@ function VisitorMarker({ position }) {
           emissiveIntensity={0.16}
         />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.25, 0]}>
-        <ringGeometry args={[0.32, 0.38, 30]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.15, 0]}>
+        <ringGeometry args={[0.19, 0.23, 30]} />
         <meshBasicMaterial color="#58c7d7" transparent opacity={0.62} />
       </mesh>
       <Text
-        position={[0, 0.42, 0]}
-        fontSize={0.14}
+        position={[0, 0.26, 0]}
+        fontSize={0.08}
         color="#f8fafc"
         anchorX="center"
         anchorY="middle"
@@ -202,9 +234,9 @@ function VisitorMarker({ position }) {
 }
 
 function WorldNode({ node, isActive, onHover, onSelect }) {
-  const scale = isActive ? 1.08 : 1;
+  const scale = isActive ? 1.06 : 1;
   const [x, , z] = node.position;
-  const y = getTerrainHeight(x, z) + 0.68;
+  const y = getTerrainHeight(x, z) + 0.48;
 
   return (
     <Float speed={1.1} rotationIntensity={0.08} floatIntensity={0.14}>
@@ -225,7 +257,7 @@ function WorldNode({ node, isActive, onHover, onSelect }) {
         }}
       >
         <mesh castShadow>
-          <boxGeometry args={[1.08, 1.08, 1.08]} />
+          <boxGeometry args={[0.72, 0.72, 0.72]} />
           <meshStandardMaterial
             color={node.color}
             roughness={0.42}
@@ -234,17 +266,17 @@ function WorldNode({ node, isActive, onHover, onSelect }) {
             emissiveIntensity={isActive ? 0.25 : 0.08}
           />
         </mesh>
-        <mesh position={[0, -0.62, 0]}>
-          <cylinderGeometry args={[0.74, 0.9, 0.18, 36]} />
+        <mesh position={[0, -0.42, 0]}>
+          <cylinderGeometry args={[0.46, 0.58, 0.12, 36]} />
           <meshStandardMaterial color="#263241" roughness={0.76} />
         </mesh>
         <Text
-          position={[0, 0.82, 0]}
-          fontSize={0.16}
+          position={[0, 0.56, 0]}
+          fontSize={0.11}
           color="#f8fafc"
           anchorX="center"
           anchorY="middle"
-          maxWidth={1.8}
+          maxWidth={1.25}
         >
           {node.title}
         </Text>

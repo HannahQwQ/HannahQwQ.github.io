@@ -11,7 +11,7 @@ const MOVEMENT_KEYS = new Set([
   'ArrowRight',
 ]);
 
-const WORLD_LIMIT = 5.2;
+const WORLD_LIMIT = 7.2;
 const SPEED = 2.4;
 
 function clamp(value) {

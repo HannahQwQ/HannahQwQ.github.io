@@ -116,8 +116,8 @@ export default function World() {
             className="fallback-visitor"
             style={{
               '--visitor-color': visitorSignal.color,
-              left: `${50 + visitorPosition.x * 7}%`,
-              top: `${56 + visitorPosition.z * 5.6}%`,
+              left: `${50 + visitorPosition.x * 5.8}%`,
+              top: `${56 + visitorPosition.z * 4.4}%`,
             }}
           >
             You

@@ -29,6 +29,7 @@
   width: min(280px, calc(100vw - 48px));
   aspect-ratio: 1 / 0.68;
   z-index: 8;
+  isolation: isolate;
 }
 
 .fallback-orbit {
@@ -48,8 +49,8 @@
   width: 100%;
   border-color: rgba(248, 250, 252, 0.32);
   background:
-    radial-gradient(circle at 48% 50%, rgba(255, 255, 255, 0.32), transparent 24%),
-    linear-gradient(135deg, rgba(238, 244, 248, 0.92), rgba(204, 216, 225, 0.76));
+    radial-gradient(circle at 48% 50%, rgba(255, 255, 255, 0.42), transparent 24%),
+    linear-gradient(135deg, #eef4f8, #ccd8e1);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
 }
@@ -192,26 +193,26 @@
 }
 
 .fallback-node {
-  width: 132px;
-  height: 86px;
+  width: 104px;
+  height: 68px;
   border: 1px solid rgba(248, 250, 252, 0.16);
   color: #f8fafc;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.76rem;
   cursor: pointer;
   pointer-events: auto;
   box-shadow: 0 24px 45px rgba(0, 0, 0, 0.24);
 }
 
 .world-map-minimap .fallback-node {
-  width: 72px;
-  height: 44px;
-  font-size: 0.66rem;
+  width: 50px;
+  height: 32px;
+  font-size: 0.54rem;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
 }
 
 .fallback-node span {
-  padding: 0 12px;
+  padding: 0 8px;
   text-align: center;
 }
 
@@ -247,8 +248,8 @@
 .fallback-companion {
   left: 50%;
   top: 56%;
-  width: 58px;
-  height: 58px;
+  width: 44px;
+  height: 44px;
   translate: -50% -50%;
   background: color-mix(in srgb, var(--visitor-color, #f7f3e8), #f7f3e8 72%);
   color: #111827;
@@ -258,20 +259,20 @@
 }
 
 .world-map-minimap .fallback-companion {
-  width: 34px;
-  height: 34px;
-  font-size: 0.72rem;
+  width: 24px;
+  height: 24px;
+  font-size: 0.58rem;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
 }
 
 .fallback-visitor {
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
   translate: -50% -50%;
   border: 2px solid color-mix(in srgb, var(--visitor-color, #58c7d7), #ffffff 30%);
   background: color-mix(in srgb, var(--visitor-color, #58c7d7), #ffffff 78%);
   color: #0d1118;
-  font-size: 0.76rem;
+  font-size: 0.62rem;
   font-weight: 800;
   box-shadow: 0 18px 34px rgba(0, 0, 0, 0.24);
   pointer-events: none;
@@ -279,9 +280,9 @@
 }
 
 .world-map-minimap .fallback-visitor {
-  width: 28px;
-  height: 28px;
-  font-size: 0.58rem;
+  width: 20px;
+  height: 20px;
+  font-size: 0.48rem;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
 }
 
